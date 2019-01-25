@@ -6,8 +6,8 @@ import { configs } from '.';
 export default class Socket {
   started = false;
 
-  constructor(config = {}) {
-    const { socket = {}, timeout = 1000 } = config;
+  constructor(options = {}) {
+    const { socket = {}, timeout = 1000 } = options;
     this.ipc = ipc;
     this.timeout = timeout;
     this.ipc.config = {
