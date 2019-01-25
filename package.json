@@ -1,0 +1,69 @@
+{
+  "name": "multithread-config",
+  "version": "0.0.1",
+  "description": "set and load config from multiple threads",
+  "keywords": [
+    "config",
+    "configuration",
+    "deasync",
+    "ipc",
+    "multithread",
+    "multithread-config",
+    "multithreaded",
+    "socket",
+    "sync",
+    "synchronous"
+  ],
+  "homepage": "https://github.com/codejamninja/multithread-config",
+  "bugs": {
+    "url": "https://github.com/codejamninja/multithread-config/issues",
+    "email": "jam@codejam.ninja"
+  },
+  "license": "MIT",
+  "author": {
+    "name": "Jam Risser",
+    "email": "jam@codejam.ninja",
+    "url": "https://codejam.ninja"
+  },
+  "files": [
+    "lib"
+  ],
+  "main": "lib/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/codejamninja/multithread-config"
+  },
+  "scripts": {
+    "build": "npm run test && babel src -d lib",
+    "clean": "git clean -fXd -e \\!node_modules -e \\!node_modules/**/*",
+    "clean:purge": "git clean -fXd",
+    "format": "prettier --write ./src/**/*.js",
+    "lint": "npm run format && eslint ./",
+    "lint:fix": "npm run format && eslint --fix ./",
+    "prepublish": "npm run build",
+    "start": "sh example/start.sh",
+    "start:client": "babel-node example/client",
+    "start:server": "babel-node example/server",
+    "test": "npm run lint"
+  },
+  "dependencies": {
+    "circular-json": "^0.5.9",
+    "deasync": "^0.1.14",
+    "merge-configuration": "^0.4.1",
+    "node-ipc": "^9.1.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.2.0",
+    "@babel/core": "^7.2.0",
+    "@babel/node": "^7.2.0",
+    "babel-preset-jam": "^0.1.0",
+    "eslint": "^5.9.0",
+    "eslint-config-jam": "^0.1.6"
+  },
+  "engines": {
+    "node": ">=6.0.0"
+  },
+  "eslintIgnore": [
+    "lib"
+  ]
+}
