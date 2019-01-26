@@ -1,5 +1,6 @@
-import { getConfig } from '../src';
+import MultithreadConfig from '../src';
 
 setTimeout(() => {
-  console.log('client: config', getConfig({ socket: { silent: false } }));
-}, 4000);
+  const mc = new MultithreadConfig();
+  console.log('client: config', mc.config);
+}, 5000);

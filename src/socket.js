@@ -1,23 +1,25 @@
 import CircularJSON from 'circular-json';
-import { sleep } from 'deasync';
 import ipc from 'node-ipc';
+import path from 'path';
+import pkgDir from 'pkg-dir';
+import { sleep } from 'deasync';
 import { configs } from '.';
 
 export default class Socket {
-  started = false;
-
   constructor(options = {}) {
-    const { timeout = 1000 } = options;
-    let { socket = {} } = options;
-    if (socket === true) socket = {};
+    this.options = {
+      timeout: 1000,
+      ...options
+    };
     this.ipc = ipc;
-    this.timeout = timeout;
     this.ipc.config = {
       ...this.ipc.config,
-      id: options.name,
       retry: 1000,
       silent: true,
-      ...socket
+      ...(options.socket === true ? {} : options.socket),
+      id:
+        require(path.resolve(pkgDir.sync(process.cwd()), 'package.json'))
+          .name || 'some-ipc-id'
     };
   }
 
@@ -32,7 +34,7 @@ export default class Socket {
           done = true;
         });
         this.ipc.of[id].emit('config.req', {});
-        sleep(this.timeout);
+        sleep(this.options.timeout);
         done = true;
       });
     } catch (err) {
@@ -47,7 +49,12 @@ export default class Socket {
     return alive;
   }
 
-  getConfig(name) {
+  get server() {
+    return this.ipc.server;
+  }
+
+  get config() {
+    const { name } = this.options;
     const { id } = this.ipc.config;
     let done = false;
     let config = null;
@@ -58,7 +65,7 @@ export default class Socket {
           done = true;
         });
         this.ipc.of[id].emit('config.req', { name });
-        sleep(this.timeout);
+        sleep(this.options.timeout);
         done = true;
       });
     } catch (err) {
@@ -91,7 +98,6 @@ export default class Socket {
         sleep(100);
       } catch (err) {}
     }
-    this.started = true;
     return null;
   }
 

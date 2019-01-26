@@ -1,81 +1,68 @@
-import mergeConfiguration from 'merge-configuration';
 import path from 'path';
 import pkgDir from 'pkg-dir';
 import Socket from './socket';
 import State from './state';
 
-const defaultOptions = {
-  name:
-    require(path.resolve(pkgDir.sync(process.cwd()), 'package.json')).name ||
-    'some-config',
-  socket: true
-};
-let socket = null;
-
 export const configs = {};
 
-export function setConfig(config = {}, options = {}) {
-  options = { ...defaultOptions, ...options };
-  const { name } = options;
-  if (options.socket) {
-    if (!socket) socket = new Socket(options);
-    if (!socket.alive) socket.start();
+export default class MultithreadConfig {
+  constructor(options) {
+    this.options = {
+      timeout: 1000,
+      socket: true,
+      name:
+        require(path.resolve(pkgDir.sync(process.cwd()), 'package.json'))
+          .name || 'some-config',
+      ...options
+    };
+    if (this.options.socket) this.socket = new Socket(this.options);
   }
-  if (!isOwner(options)) {
-    throw new Error('process is not the owner of config');
+
+  get owner() {
+    if (this._owner) return this._owner;
+    const { socket } = this.options;
+    if (!socket) {
+      this._owner = true;
+    } else {
+      this._owner = !this.socket.alive || !!this.socket.server;
+    }
+    return this._owner;
   }
-  if (isFree(name, options)) configs[name] = new State();
-  configs[name].config = mergeConfiguration(configs[name].config, config, {
-    level: 1,
-    ...(options.mergeConfiguration || {})
-  });
-  return configs[name].config;
-}
 
-export function getConfig(options = {}) {
-  options = { ...defaultOptions, ...options };
-  const { name } = options;
-  if (options.socket && !socket) socket = new Socket(options);
-  let config = null;
-  if (configs[name]) {
-    ({ config } = configs[name]);
-  } else if (socket) {
-    try {
-      config = socket.getConfig(name);
-    } catch (err) {}
+  get free() {
+    return !this.config;
   }
-  if (!config) {
-    configs[name] = new State();
-    ({ config } = configs[name]);
+
+  set config(config = {}) {
+    const { name, socket } = this.options;
+    if (socket) {
+      if (!this.socket.alive) this.socket.start();
+    }
+    if (!this.owner) throw new Error('process is not the owner of config');
+    if (this.free) configs[name] = new State();
+    configs[name].config = config;
+    return configs[name].config;
   }
-  if (!isOwner()) setTimeout(stop, 100);
-  return config;
-}
 
-export function isOwner(options = {}) {
-  options = { ...defaultOptions, ...options };
-  if (!options.socket) return true;
-  if (!socket) socket = new Socket(options);
-  return socket.started;
-}
+  get config() {
+    const { name, timeout } = this.options;
+    let config = null;
+    if (configs[name]) {
+      ({ config } = configs[name]);
+    } else if (this.socket) {
+      try {
+        ({ config } = this.socket);
+      } catch (err) {}
+    }
+    if (!config) {
+      configs[name] = new State();
+      ({ config } = configs[name]);
+    }
+    if (!this.owner) setTimeout(this.stop.bind(this), timeout);
+    return config;
+  }
 
-export function isFree(name, options = {}) {
-  options = { ...defaultOptions, ...options };
-  if (name) options.name = name;
-  return !getConfig(options);
+  stop() {
+    if (this.socket) this.socket.stop();
+  }
 }
-
-export function stop(options = {}) {
-  options = { ...defaultOptions, ...options };
-  if (!options.socket) return null;
-  if (!socket) socket = new Socket(options);
-  return socket.stop();
-}
-
-export default {
-  getConfig,
-  isFree,
-  isOwner,
-  setConfig,
-  stop
-};
