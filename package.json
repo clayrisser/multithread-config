@@ -50,7 +50,8 @@
     "circular-json": "^0.5.9",
     "deasync": "^0.1.14",
     "merge-configuration": "^0.4.1",
-    "node-ipc": "^9.1.1"
+    "node-ipc": "^9.1.1",
+    "pkg-dir": "^3.0.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.2.0",

@@ -1,24 +1,30 @@
 import mergeConfiguration from 'merge-configuration';
+import path from 'path';
+import pkgDir from 'pkg-dir';
 import Socket from './socket';
 import State from './state';
 
-let socket = null;
+const pkg = require(path.resolve(pkgDir.sync(process.cwd()), 'package.json'));
 const state = new State();
+let socket = null;
 
 export const configs = {};
 
-export function setConfig(name, config, options = {}) {
+export function setConfig(config = {}, options = {}, name = pkg.name) {
   if (!socket) socket = new Socket(options);
   if (!socket.alive) socket.start();
   if (!isOwner()) {
     throw new Error('process is not the owner of config');
   }
-  state.config = mergeConfiguration(state.config, config);
+  state.config = mergeConfiguration(state.config, config, {
+    level: 1,
+    ...(options.mergeConfiguration || {})
+  });
   if (isFree(name)) configs[name] = state.config;
   return state.config;
 }
 
-export function getConfig(name, options = {}) {
+export function getConfig(options = {}, name = pkg.name) {
   if (!socket) socket = new Socket(options);
   let config = null;
   if (configs[name]) {
@@ -28,7 +34,7 @@ export function getConfig(name, options = {}) {
       config = socket.getConfig(name);
     } catch (err) {}
   }
-  if (!isOwner()) stop();
+  if (!isOwner()) setTimeout(stop, 100);
   return config;
 }
 
@@ -37,12 +43,11 @@ export function isOwner(options = {}) {
   return socket.started;
 }
 
-export function isFree(name, options) {
-  if (!socket) socket = new Socket(options);
+export function isFree(name = pkg.name) {
   return !getConfig(name);
 }
 
-export function stop(options) {
+export function stop(options = {}) {
   if (!socket) socket = new Socket(options);
   socket.stop();
 }
