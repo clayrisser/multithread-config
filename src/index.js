@@ -4,18 +4,19 @@ import pkgDir from 'pkg-dir';
 import Socket from './socket';
 import State from './state';
 
-const defaultOptions = { socket: true };
-const pkg = require(path.resolve(pkgDir.sync(process.cwd()), 'package.json'));
+const defaultOptions = {
+  name:
+    require(path.resolve(pkgDir.sync(process.cwd()), 'package.json')).name ||
+    'some-config',
+  socket: true
+};
 const state = new State();
 let socket = null;
 
 export const configs = {};
 
-export function setConfig(
-  config = {},
-  options = defaultOptions,
-  name = pkg.name
-) {
+export function setConfig(config = {}, options = defaultOptions) {
+  const { name } = options;
   if (options.socket) {
     if (!socket) socket = new Socket(options);
     if (!socket.alive) socket.start();
@@ -27,18 +28,19 @@ export function setConfig(
     level: 1,
     ...(options.mergeConfiguration || {})
   });
-  if (isFree(name)) configs[name] = state.config;
+  if (isFree(options)) configs[name] = state.config;
   return state.config;
 }
 
-export function getConfig(options = defaultOptions, name = pkg.name) {
+export function getConfig(options = defaultOptions) {
+  const { name } = options;
   if (options.socket && !socket) socket = new Socket(options);
   let config = null;
   if (configs[name]) {
     config = configs[name];
   } else if (socket) {
     try {
-      config = socket.getConfig(name);
+      config = socket.getConfig(options);
     } catch (err) {}
   }
   if (!isOwner()) setTimeout(stop, 100);
@@ -51,8 +53,8 @@ export function isOwner(options = defaultOptions) {
   return socket.started;
 }
 
-export function isFree(name = pkg.name) {
-  return !getConfig(name);
+export function isFree(options = defaultOptions) {
+  return !getConfig(options);
 }
 
 export function stop(options = defaultOptions) {
