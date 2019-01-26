@@ -7,7 +7,9 @@ export default class Socket {
   started = false;
 
   constructor(options = {}) {
-    const { socket = {}, timeout = 1000 } = options;
+    const { timeout = 1000 } = options;
+    let { socket = {} } = options;
+    if (socket === true) socket = {};
     this.ipc = ipc;
     this.timeout = timeout;
     this.ipc.config = {
