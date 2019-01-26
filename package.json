@@ -1,6 +1,6 @@
 {
   "name": "multithread-config",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "set and load config from multiple threads",
   "keywords": [
     "config",
