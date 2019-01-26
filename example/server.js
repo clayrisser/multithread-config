@@ -1,4 +1,6 @@
-import config, { setConfig, stop } from '../src';
+import { getConfig, setConfig, stop } from '../src';
+
+const config = getConfig();
 
 console.log('server: before', config);
 setConfig({ hello: 'world' }, { silent: false });

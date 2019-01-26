@@ -14,7 +14,7 @@ export default class Socket {
     this.timeout = timeout;
     this.ipc.config = {
       ...this.ipc.config,
-      id: 'some-socket',
+      id: options.name,
       retry: 1000,
       silent: true,
       ...socket
@@ -38,7 +38,11 @@ export default class Socket {
     } catch (err) {
       done = true;
     }
-    while (!done) sleep(100);
+    while (!done) {
+      try {
+        sleep(100);
+      } catch (err) {}
+    }
     this.ipc.disconnect(id);
     return alive;
   }
@@ -46,7 +50,6 @@ export default class Socket {
   getConfig(name) {
     const { id } = this.ipc.config;
     let done = false;
-    let error = null;
     let config = null;
     try {
       this.ipc.connectTo(id, () => {
@@ -59,17 +62,19 @@ export default class Socket {
         done = true;
       });
     } catch (err) {
-      error = err;
       done = true;
     }
-    while (!done) sleep(100);
+    while (!done) {
+      try {
+        sleep(100);
+      } catch (err) {}
+    }
     this.ipc.disconnect(id);
-    if (error) throw error;
     return config;
   }
 
   handleConfigRequest(res, socket) {
-    let config = configs[res.name] || null;
+    let config = configs[res.name]?.config || null;
     if (config) config = JSON.parse(CircularJSON.stringify(config));
     this.ipc.server.emit(socket, 'config.res', { config });
   }
@@ -81,7 +86,11 @@ export default class Socket {
       done = true;
     });
     this.ipc.server.start();
-    while (!done) sleep(100);
+    while (!done) {
+      try {
+        sleep(100);
+      } catch (err) {}
+    }
     this.started = true;
     return null;
   }
