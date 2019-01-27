@@ -8,7 +8,7 @@ export const configs = {};
 export default class MultithreadConfig {
   constructor(options) {
     this.options = {
-      timeout: 1000,
+      timeout: 100,
       socket: true,
       name:
         require(path.resolve(pkgDir.sync(process.cwd()), 'package.json'))
