@@ -16,10 +16,10 @@ export default class Socket {
       ...this.ipc.config,
       retry: 1000,
       silent: true,
-      ...(options.socket === true ? {} : options.socket),
       id:
         require(path.resolve(pkgDir.sync(process.cwd()), 'package.json'))
-          .name || 'some-ipc-id'
+          .name || 'some-ipc-id',
+      ...(options.socket === true ? {} : options.socket)
     };
   }
 
