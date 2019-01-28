@@ -7,7 +7,11 @@ mc1.config = { hello: 'world' };
 console.log('server1: after', config1);
 mc1.config = { ...mc1.config, howdy: 'texas' };
 console.log('server1: updated', config1);
-setTimeout(mc1.stop.bind(mc1), 7000);
+setTimeout(() => {
+  mc1.config = { ...mc1.config, yip: 'yap' };
+  console.log('server1: updated', config1);
+  setTimeout(mc1.stop.bind(mc1), 2000);
+}, 3000);
 
 const mc2 = new MultithreadConfig({
   name: 'config2',

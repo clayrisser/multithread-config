@@ -1,14 +1,19 @@
 import CircularJSON from 'circular-json';
+import _ from 'lodash';
 import ipc from 'node-ipc';
 import path from 'path';
 import pkgDir from 'pkg-dir';
 import { sleep } from 'deasync';
 import { configs } from '.';
 
+const sockets = {};
+
 export default class Socket {
   constructor(options = {}) {
     this.options = {
-      timeout: 1000,
+      cascadeStop: true,
+      stopTimeout: 1000,
+      timeout: 100,
       ...options
     };
     this.ipc = ipc;
@@ -21,6 +26,19 @@ export default class Socket {
           .name || 'some-ipc-id',
       ...(options.socket === true ? {} : options.socket)
     };
+    process.on('uncaughtException', err => {
+      if (/Cannot read property 'config' of undefined/.test(err.message)) {
+        process.exit();
+      } else {
+        throw err;
+      }
+    });
+  }
+
+  get owner() {
+    if (this._owner) return this._owner;
+    this._owner = !this.alive || !!this.server;
+    return this._owner;
   }
 
   get alive() {
@@ -29,11 +47,11 @@ export default class Socket {
     let done = false;
     try {
       this.ipc.connectTo(id, () => {
-        this.ipc.of[id].on('config.res', () => {
+        this.ipc.of[id].on('getConfig.res', () => {
           alive = true;
           done = true;
         });
-        this.ipc.of[id].emit('config.req', {});
+        this.ipc.of[id].emit('getConfig.req', { pid: process.pid });
         sleep(this.options.timeout);
         done = true;
       });
@@ -45,7 +63,6 @@ export default class Socket {
         sleep(100);
       } catch (err) {}
     }
-    this.ipc.disconnect(id);
     return alive;
   }
 
@@ -53,18 +70,28 @@ export default class Socket {
     return this.ipc.server;
   }
 
+  set config(config = {}) {
+    if (this.owner) {
+      _.each(sockets, socket => {
+        this.ipc.server.emit(socket, 'updateConfig', {});
+      });
+    }
+  }
+
   get config() {
     const { name } = this.options;
     const { id } = this.ipc.config;
     let done = false;
     let config = null;
+    if (this.owner) return configs[name]?.config || null;
     try {
       this.ipc.connectTo(id, () => {
-        this.ipc.of[id].on('config.res', res => {
+        this.listenToOwner();
+        this.ipc.of[id].on('getConfig.res', res => {
           ({ config } = res);
           done = true;
         });
-        this.ipc.of[id].emit('config.req', { name });
+        this.ipc.of[id].emit('getConfig.req', { name, pid: process.pid });
         sleep(this.options.timeout);
         done = true;
       });
@@ -76,20 +103,41 @@ export default class Socket {
         sleep(100);
       } catch (err) {}
     }
-    this.ipc.disconnect(id);
     return config;
   }
 
-  handleConfigRequest(res, socket) {
-    let config = configs[res.name]?.config || null;
+  listenToOwner() {
+    if (this.owner) return null;
+    const { id } = this.ipc.config;
+    if (this._listenToOwner) return null;
+    this._listenToOwner = true;
+    this.ipc.of[id].on('updateConfig', () => this.onUpdate(this.config));
+    this.ipc.of[id].on('stop', () => {
+      try {
+        this.stop();
+      } catch (err) {}
+    });
+    return null;
+  }
+
+  handleGetConfigRequest(req, socket) {
+    if (this.owner && req.pid) sockets[req.pid] = socket;
+    let config = configs[req.name]?.config || null;
     if (config) config = JSON.parse(CircularJSON.stringify(config));
-    this.ipc.server.emit(socket, 'config.res', { config });
+    this.ipc.server.emit(socket, 'getConfig.res', { config });
+  }
+
+  onUpdate(config) {
+    return config;
   }
 
   start() {
     let done = false;
     this.ipc.serve(() => {
-      this.ipc.server.on('config.req', this.handleConfigRequest.bind(this));
+      this.ipc.server.on(
+        'getConfig.req',
+        this.handleGetConfigRequest.bind(this)
+      );
       done = true;
     });
     this.ipc.server.start();
@@ -103,9 +151,21 @@ export default class Socket {
 
   stop() {
     const { id } = this.ipc.config;
+    const { cascadeStop, stopTimeout } = this.options;
+    if (this.owner && cascadeStop) {
+      _.each(sockets, socket => {
+        this.ipc.server.emit(socket, 'stop', {});
+      });
+    }
     this.ipc.disconnect(id);
     const { server } = this.ipc;
-    if (server) server.stop();
+    if (server) {
+      if (server.server) ipc.server.server.close();
+      server.stop();
+      setTimeout(() => {
+        process.exit();
+      }, stopTimeout);
+    }
     return null;
   }
 }

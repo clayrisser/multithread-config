@@ -15,7 +15,14 @@ export default class MultithreadConfig {
           .name || 'some-config',
       ...options
     };
-    if (this.options.socket) this.socket = new Socket(this.options);
+    if (this.options.socket) {
+      this.socket = new Socket(this.options);
+      this.socket.onUpdate = config => {
+        const { name } = this.options;
+        if (!configs[name]) configs[name] = new State();
+        configs[name].config = config;
+      };
+    }
   }
 
   get owner() {
@@ -24,7 +31,7 @@ export default class MultithreadConfig {
     if (!socket) {
       this._owner = true;
     } else {
-      this._owner = !this.socket.alive || !!this.socket.server;
+      this._owner = this.socket.owner;
     }
     return this._owner;
   }
@@ -41,28 +48,33 @@ export default class MultithreadConfig {
     if (!this.owner) throw new Error('process is not the owner of config');
     if (this.free) configs[name] = new State();
     configs[name].config = config;
+    if (socket) this.socket.config = configs[name].config;
     return configs[name].config;
   }
 
   get config() {
-    const { name, timeout } = this.options;
-    let config = null;
-    if (configs[name]) {
-      ({ config } = configs[name]);
-    } else if (this.socket) {
+    const { name } = this.options;
+    if (!configs[name]) configs[name] = new State();
+    if (!this.owner) {
+      let config = null;
       try {
         ({ config } = this.socket);
       } catch (err) {}
+      if (config) configs[name].config = config;
     }
-    if (!config) {
-      configs[name] = new State();
-      ({ config } = configs[name]);
-    }
-    if (!this.owner) setTimeout(this.stop.bind(this), timeout);
-    return config;
+    return configs[name].config;
+  }
+
+  get alive() {
+    return this.socket.alive();
   }
 
   stop() {
-    if (this.socket) this.socket.stop();
+    if (this.socket) {
+      try {
+        return this.socket.stop();
+      } catch (err) {}
+    }
+    return null;
   }
 }

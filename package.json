@@ -49,6 +49,7 @@
   "dependencies": {
     "circular-json": "^0.5.9",
     "deasync": "^0.1.14",
+    "lodash": "^4.17.11",
     "node-ipc": "^9.1.1",
     "pkg-dir": "^3.0.0"
   },
