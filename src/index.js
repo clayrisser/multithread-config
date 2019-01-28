@@ -21,6 +21,7 @@ export default class MultithreadConfig {
         const { name } = this.options;
         if (!configs[name]) configs[name] = new State();
         configs[name].config = config;
+        this.onUpdate(configs[name].config);
       };
     }
   }
@@ -67,6 +68,10 @@ export default class MultithreadConfig {
 
   get alive() {
     return this.socket.alive();
+  }
+
+  onUpdate(config) {
+    return config;
   }
 
   stop() {
