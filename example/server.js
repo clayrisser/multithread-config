@@ -1,11 +1,10 @@
-import Socket from '../src/socket';
+import MultithreadConfig from '../src';
 
 (async () => {
-  const socket = new Socket();
-  await socket.start();
-  await socket.setConfig({ hello: 'world' });
-  const config = await socket.getConfig();
-  socket.onUpdate = config => console.log('s config updated', config);
-  console.log('s', config);
-  setTimeout(() => socket.setConfig({ howdy: 'texas' }), 5000);
+  const mc = new MultithreadConfig();
+  mc.onUpdate = config => console.log('s updated', config);
+  await mc.start();
+  await mc.setConfig({ hello: 'world' });
+  console.log('s', await mc.getConfig());
+  setTimeout(() => mc.setConfig({ howdy: 'texas' }), 5000);
 })();

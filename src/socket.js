@@ -3,6 +3,7 @@ import _ from 'lodash';
 import ipc from 'node-ipc';
 import path from 'path';
 import pkgDir from 'pkg-dir';
+import { mapSeries } from 'bluebird';
 import State from './state';
 
 const rootPath = pkgDir.sync(process.cwd()) || process.cwd();
@@ -69,12 +70,18 @@ export default class Socket {
       if (!this.states[name]) this.states[name] = new State();
       this.states[name].config = config;
     }
-    _.each(sockets, socket => {
-      this.clientOn('updateConfig.res', async () => {
-        this.onUpdate(await this.getConfig(name));
+    await mapSeries(Object.values(sockets), async socket => {
+      const result = new Promise((resolve, reject) => {
+        try {
+          return this.clientOn('updateConfig.res', resolve);
+        } catch (err) {
+          return reject(err);
+        }
       });
       this.serverEmit(socket, 'updateConfig.req', {});
+      return result;
     });
+    this.onUpdate(await this.getConfig(name));
   }
 
   async getConfig(name) {
@@ -82,7 +89,7 @@ export default class Socket {
     if (this.isOwner) return this.states?.[name]?.config || {};
     return new Promise((resolve, reject) => {
       try {
-        return this.connectToServer(async () => {
+        return this.connectToServer(() => {
           this.serverOn('updateConfig.req', async () => {
             this.onUpdate(await this.getConfig(name));
             this.clientEmit('updateConfig.res', {});
@@ -161,14 +168,14 @@ export default class Socket {
   }
 
   serverOn(event, callback) {
-    if (this.events.has(event)) return null;
+    // if (this.events.has(event)) return null;
     this.events.add(event);
     const { id } = this.ipc.config;
     return this.ipc.of[id].on(event, callback);
   }
 
   clientOn(event, callback) {
-    if (this.events.has(event)) return null;
+    // if (this.events.has(event)) return null;
     this.events.add(event);
     return this.ipc.server.on(event, callback);
   }

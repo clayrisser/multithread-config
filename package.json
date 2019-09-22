@@ -1,6 +1,6 @@
 {
   "name": "multithread-config",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "set and load config from multiple threads",
   "keywords": [
     "config",
@@ -34,7 +34,7 @@
     "url": "https://github.com/codejamninja/multithread-config"
   },
   "scripts": {
-    "build": "babel src -d lib",
+    "build": "npm run test && babel src -d lib",
     "clean": "git clean -fXd -e \\!node_modules -e \\!node_modules/**/* && jest --clearCache",
     "clean:purge": " && jest --clearCache && git clean -fXd",
     "format": "prettier --write ./**/*.{json,md,scss,yaml,yml,js,jsx,ts,tsx} --ignore-path .gitignore",
@@ -47,14 +47,13 @@
     "test": "npm run lint && jest"
   },
   "dependencies": {
+    "bluebird": "^3.5.5",
     "circular-json": "^0.5.9",
     "core-js": "^3.2.1",
     "deasync": "^0.1.15",
-    "fs-extra": "^8.1.0",
     "lodash": "^4.17.15",
     "node-ipc": "^9.1.1",
-    "pkg-dir": "^4.2.0",
-    "uuid": "^3.3.3"
+    "pkg-dir": "^4.2.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.6.0",
@@ -65,7 +64,8 @@
     "eslint": "^6.4.0",
     "eslint-config-jam": "^0.2.20",
     "eslint-plugin-jest": "^22.17.0",
-    "jest": "^24.9.0"
+    "jest": "^24.9.0",
+    "uuid": "^3.3.3"
   },
   "engines": {
     "node": ">=6.0.0"

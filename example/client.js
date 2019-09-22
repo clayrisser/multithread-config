@@ -1,8 +1,8 @@
-import Socket from '../src/socket';
+import MultithreadConfig from '../src';
 
 (async () => {
-  const socket = new Socket();
-  const config = await socket.getConfig();
-  socket.onUpdate = config => console.log('c config updated', config);
+  const mc = new MultithreadConfig();
+  mc.onUpdate = config => console.log('c updated', config);
+  const config = await mc.getConfig();
   console.log('c', config);
 })();
