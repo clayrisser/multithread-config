@@ -13,6 +13,8 @@ const sockets = {};
 export default class Socket {
   isOwner = false;
 
+  isStarted = false;
+
   states = [];
 
   events = new Set();
@@ -81,7 +83,9 @@ export default class Socket {
       this.serverEmit(socket, 'updateConfig.req', {});
       return result;
     });
-    this.onUpdate(await this.getConfig(name));
+    const updatedConfig = await this.getConfig(name);
+    this.onUpdate(updatedConfig);
+    return updatedConfig;
   }
 
   async getConfig(name) {
@@ -114,6 +118,8 @@ export default class Socket {
   }
 
   async start() {
+    if (this.isStarted) return null;
+    this.isStarted = true;
     this.isOwner = true;
     return new Promise((resolve, reject) => {
       try {
