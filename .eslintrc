@@ -2,6 +2,7 @@
   "extends": ["jam/base"],
   "rules": {
     "global-require": "off",
+    "import/no-cycle": "off",
     "import/no-dynamic-require": "off",
     "no-empty": "off"
   }

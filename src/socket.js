@@ -3,17 +3,25 @@ import _ from 'lodash';
 import ipc from 'node-ipc';
 import path from 'path';
 import pkgDir from 'pkg-dir';
-import { sleep } from 'deasync';
-import { configs } from '.';
+import State from './state';
 
+const rootPath = pkgDir.sync(process.cwd()) || process.cwd();
+const pkg = require(path.resolve(rootPath, 'package.json'));
 const sockets = {};
 
 export default class Socket {
+  isOwner = false;
+
+  states = [];
+
+  events = new Set();
+
   constructor(options = {}) {
     this.options = {
       cascadeStop: true,
       stopTimeout: 1000,
       timeout: 100,
+      name: pkg.name,
       ...options
     };
     this.ipc = ipc;
@@ -21,9 +29,7 @@ export default class Socket {
       ...this.ipc.config,
       retry: 1000,
       silent: true,
-      id:
-        require(path.resolve(pkgDir.sync(process.cwd()), 'package.json'))
-          .name || 'some-ipc-id',
+      id: this.options.name,
       ...(options.socket === true ? {} : options.socket)
     };
     process.on('uncaughtException', err => {
@@ -35,126 +41,106 @@ export default class Socket {
     });
   }
 
-  get owner() {
-    if (this._owner) return this._owner;
-    this._owner = !this.alive || !!this.server;
-    return this._owner;
-  }
-
-  get alive() {
-    const { id } = this.ipc.config;
-    let alive = false;
-    let done = false;
-    try {
-      this.ipc.connectTo(id, () => {
-        this.ipc.of[id].on('getConfig.res', () => {
-          alive = true;
-          done = true;
-        });
-        this.ipc.of[id].emit('getConfig.req', { pid: process.pid });
-        sleep(this.options.timeout);
-        done = true;
-      });
-    } catch (err) {
-      done = true;
-    }
-    while (!done) {
+  async isAlive() {
+    return new Promise((resolve, reject) => {
       try {
-        sleep(100);
-      } catch (err) {}
-    }
-    return alive;
+        return this.connectToServer(() => {
+          this.serverOn('ping.res', () => resolve(true));
+          this.clientEmit('ping.req');
+          setTimeout(() => resolve(false), this.options.timeout);
+        });
+      } catch (err) {
+        return reject(err);
+      }
+    });
   }
 
   get server() {
     return this.ipc.server;
   }
 
-  set config(config = {}) {
-    if (this.owner) {
-      _.each(sockets, socket => {
-        this.ipc.server.emit(socket, 'updateConfig', {});
-      });
-    }
+  get name() {
+    return this.options.name;
   }
 
-  get config() {
-    const { name } = this.options;
-    const { id } = this.ipc.config;
-    let done = false;
-    let config = null;
-    if (this.owner) return configs[name]?.config || null;
-    try {
-      this.ipc.connectTo(id, () => {
-        this.listenToOwner();
-        this.ipc.of[id].on('getConfig.res', res => {
-          ({ config } = res);
-          done = true;
-        });
-        this.ipc.of[id].emit('getConfig.req', { name, pid: process.pid });
-        sleep(this.options.timeout);
-        done = true;
+  async setConfig(config = {}, name) {
+    if (!name) ({ name } = this);
+    if (this.isOwner) {
+      if (!this.states[name]) this.states[name] = new State();
+      this.states[name].config = config;
+    }
+    _.each(sockets, socket => {
+      this.clientOn('updateConfig.res', async () => {
+        this.onUpdate(await this.getConfig(name));
       });
-    } catch (err) {
-      done = true;
-    }
-    while (!done) {
-      try {
-        sleep(100);
-      } catch (err) {}
-    }
-    return config;
-  }
-
-  listenToOwner() {
-    if (this.owner) return null;
-    const { id } = this.ipc.config;
-    if (this._listenToOwner) return null;
-    this._listenToOwner = true;
-    this.ipc.of[id].on('updateConfig', () => this.onUpdate(this.config));
-    this.ipc.of[id].on('stop', () => {
-      try {
-        this.stop();
-      } catch (err) {}
+      this.serverEmit(socket, 'updateConfig.req', {});
     });
-    return null;
   }
 
-  handleGetConfigRequest(req, socket) {
-    if (this.owner && req.pid) sockets[req.pid] = socket;
-    let config = configs[req.name]?.config || null;
-    if (config) config = JSON.parse(CircularJSON.stringify(config));
-    this.ipc.server.emit(socket, 'getConfig.res', { config });
+  async getConfig(name) {
+    if (!name) ({ name } = this);
+    if (this.isOwner) return this.states?.[name]?.config || {};
+    return new Promise((resolve, reject) => {
+      try {
+        return this.connectToServer(async () => {
+          this.serverOn('updateConfig.req', async () => {
+            this.onUpdate(await this.getConfig(name));
+            this.clientEmit('updateConfig.res', {});
+          });
+          this.serverOn('stop.req', () => {
+            try {
+              this.stop();
+            } catch (err) {}
+          });
+          this.serverOn('getConfig.res', res => {
+            return resolve(res?.config || null);
+          });
+          this.clientEmit('getConfig.req', {
+            name,
+            pid: process.pid
+          });
+        });
+      } catch (err) {
+        return reject(err);
+      }
+    });
+  }
+
+  async start() {
+    this.isOwner = true;
+    return new Promise((resolve, reject) => {
+      try {
+        this.ipc.serve(() => {
+          this.clientOn('getConfig.req', (req, socket) => {
+            if (req.pid) sockets[req.pid] = socket;
+            const config = JSON.parse(
+              CircularJSON.stringify(this.states?.[req.name]?.config || {})
+            );
+            this.serverEmit(socket, 'getConfig.res', { config });
+          });
+          this.clientOn('ping.req', (req, socket) => {
+            if (req.pid) sockets[req.pid] = socket;
+            this.serverEmit(socket, 'ping.res');
+          });
+          return resolve(null);
+        });
+        return this.ipc.server.start();
+      } catch (err) {
+        return reject(err);
+      }
+    });
   }
 
   onUpdate(config) {
     return config;
   }
 
-  start() {
-    let done = false;
-    this.ipc.serve(() => {
-      this.ipc.server.on(
-        'getConfig.req',
-        this.handleGetConfigRequest.bind(this)
-      );
-      done = true;
-    });
-    this.ipc.server.start();
-    while (!done) {
-      try {
-        sleep(100);
-      } catch (err) {}
-    }
-    return null;
-  }
-
   stop() {
     const { id } = this.ipc.config;
     const { cascadeStop, stopTimeout } = this.options;
-    if (this.owner && cascadeStop) {
+    if (this.isOwner && cascadeStop) {
       _.each(sockets, socket => {
-        this.ipc.server.emit(socket, 'stop', {});
+        this.ipc.server.emit(socket, 'stop.req', {});
       });
     }
     this.ipc.disconnect(id);
@@ -167,5 +153,32 @@ export default class Socket {
       }, stopTimeout);
     }
     return null;
+  }
+
+  connectToServer(callback) {
+    const { id } = this.ipc.config;
+    return this.ipc.connectTo(id, callback);
+  }
+
+  serverOn(event, callback) {
+    if (this.events.has(event)) return null;
+    this.events.add(event);
+    const { id } = this.ipc.config;
+    return this.ipc.of[id].on(event, callback);
+  }
+
+  clientOn(event, callback) {
+    if (this.events.has(event)) return null;
+    this.events.add(event);
+    return this.ipc.server.on(event, callback);
+  }
+
+  serverEmit(socket, event, payload) {
+    return this.ipc.server.emit(socket, event, payload);
+  }
+
+  clientEmit(event, payload) {
+    const { id } = this.ipc.config;
+    return this.ipc.of[id].emit(event, payload);
   }
 }

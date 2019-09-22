@@ -1,26 +1,11 @@
-import MultithreadConfig from '../src';
+import Socket from '../src/socket';
 
-const mc1 = new MultithreadConfig();
-const config1 = mc1.config;
-console.log('server1: before', config1);
-mc1.config = { hello: 'world' };
-console.log('server1: after', config1);
-mc1.config = { ...mc1.config, howdy: 'texas' };
-console.log('server1: updated', config1);
-setTimeout(() => {
-  mc1.config = { ...mc1.config, yip: 'yap' };
-  console.log('server1: updated', config1);
-  setTimeout(mc1.stop.bind(mc1), 2000);
-}, 3000);
-
-const mc2 = new MultithreadConfig({
-  name: 'config2',
-  socket: false
-});
-const config2 = mc2.config;
-console.log('server2: before', config2);
-mc2.config = { a: 'A' };
-console.log('server2: after', config2);
-mc2.config = { ...mc2.config, b: 'B' };
-console.log('server2: updated', config2);
-mc2.stop();
+(async () => {
+  const socket = new Socket();
+  await socket.start();
+  await socket.setConfig({ hello: 'world' });
+  const config = await socket.getConfig();
+  socket.onUpdate = config => console.log('s config updated', config);
+  console.log('s', config);
+  setTimeout(() => socket.setConfig({ howdy: 'texas' }), 5000);
+})();

@@ -1,11 +1,8 @@
-import MultithreadConfig from '../src';
+import Socket from '../src/socket';
 
-const mc = new MultithreadConfig();
-
-setTimeout(() => {
-  console.log('client: config', mc.config);
-}, 2000);
-
-setTimeout(() => {
-  console.log('client: config', mc.config);
-}, 4000);
+(async () => {
+  const socket = new Socket();
+  const config = await socket.getConfig();
+  socket.onUpdate = config => console.log('c config updated', config);
+  console.log('c', config);
+})();

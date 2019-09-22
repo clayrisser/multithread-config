@@ -3,6 +3,8 @@ import pkgDir from 'pkg-dir';
 import Socket from './socket';
 import State from './state';
 
+const rootPath = pkgDir.sync(process.cwd()) || process.cwd();
+
 export const configs = {};
 
 export default class MultithreadConfig {
@@ -11,8 +13,7 @@ export default class MultithreadConfig {
       timeout: 100,
       socket: true,
       name:
-        require(path.resolve(pkgDir.sync(process.cwd()), 'package.json'))
-          .name || 'some-config',
+        require(path.resolve(rootPath, 'package.json')).name || 'some-config',
       ...options
     };
     if (this.options.socket) {
@@ -43,9 +44,7 @@ export default class MultithreadConfig {
 
   set config(config = {}) {
     const { name, socket } = this.options;
-    if (socket) {
-      if (!this.socket.alive) this.socket.start();
-    }
+    if (socket && !this.socket.alive) this.socket.start();
     if (!this.owner) throw new Error('process is not the owner of config');
     if (this.free) configs[name] = new State();
     configs[name].config = config;

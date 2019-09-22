@@ -1,4 +1,5 @@
 #!/bin/bash
 
-npm run start:client &
-npm run start:server
+npm run start:server &
+sleep 1
+npm run start:client
