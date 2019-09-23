@@ -1,5 +1,6 @@
 import CircularJSON from 'circular-json';
 import _ from 'lodash';
+import fs from 'fs-extra';
 import ipc from 'node-ipc';
 import path from 'path';
 import pkgDir from 'pkg-dir';
@@ -35,7 +36,7 @@ export default class Socket {
     };
     process.on('uncaughtException', err => {
       if (/Cannot read property 'config' of undefined/.test(err.message)) {
-        process.exit();
+        process.exit(1);
       } else {
         throw err;
       }
@@ -54,10 +55,6 @@ export default class Socket {
         return reject(err);
       }
     });
-  }
-
-  get server() {
-    return this.ipc.server;
   }
 
   get name() {
@@ -145,7 +142,7 @@ export default class Socket {
     return config;
   }
 
-  finish() {
+  async finish() {
     const { id } = this.ipc.config;
     const { cascadeStop, stopTimeout } = this.options;
     if (this.isMaster && cascadeStop) {
@@ -158,9 +155,13 @@ export default class Socket {
     if (server) {
       if (server.server) ipc.server.server.close();
       server.stop();
-      setTimeout(() => {
-        process.exit();
-      }, stopTimeout);
+      await new Promise(r => setTimeout(r, stopTimeout));
+      if (this.ipc.server.path) {
+        try {
+          fs.removeSync(this.ipc.server.path);
+        } catch (err) {}
+      }
+      process.exit();
     }
     return null;
   }

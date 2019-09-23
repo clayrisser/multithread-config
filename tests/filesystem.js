@@ -22,7 +22,7 @@ describe('async new Filesystem().isMaster', () => {
   it('filesystem is master after finishing', async () => {
     const filesystem = new Filesystem({ name: uuidv4() });
     await filesystem.start();
-    filesystem.finish();
+    await filesystem.finish();
     expect(filesystem.isMaster).toBe(true);
   });
 });
@@ -41,7 +41,7 @@ describe('async new Filesystem().isStarted()', () => {
   it('filesystem is not started after finishing', async () => {
     const filesystem = new Filesystem({ name: uuidv4() });
     await filesystem.start();
-    filesystem.finish();
+    await filesystem.finish();
     expect(await filesystem.isStarted()).toBe(false);
   });
 });

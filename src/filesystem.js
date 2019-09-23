@@ -3,6 +3,7 @@ import Err from 'err';
 import fs from 'fs-extra';
 import path from 'path';
 import pkgDir from 'pkg-dir';
+import watch from 'node-watch';
 import { LazyGetter } from 'lazy-get-decorator';
 import State from './state';
 
@@ -12,11 +13,17 @@ const pkg = require(path.resolve(rootPath, 'package.json'));
 export default class Socket {
   isMaster = false;
 
+  watcher = null;
+
   states = [];
+
+  currentProcStarted = false;
 
   constructor(options = {}) {
     this.options = {
       name: pkg.name,
+      sync: false,
+      stopTimeout: 1000,
       configBasePath: path.resolve(rootPath, '.tmp/config'),
       ...options
     };
@@ -29,6 +36,18 @@ export default class Socket {
   @LazyGetter()
   get configPath() {
     return path.resolve(this.options.configBasePath, this.name);
+  }
+
+  async handleUpdate(e, filename) {
+    const name = filename.match(/[^/]+(?=.json$)/)?.[0];
+    let config = null;
+    if (this.options.sync) {
+      config = await this.getConfig(name);
+    } else {
+      config = this.getConfigSync(name);
+    }
+    await new Promise(r => setTimeout(r, 100));
+    return this.onUpdate(config);
   }
 
   async detectIsMaster() {
@@ -115,28 +134,44 @@ export default class Socket {
   }
 
   async start() {
+    if (this.currentProcStarted) return null;
+    this.currentProcStarted = true;
+    const configPath = `${this.configPath}.json`;
+    await fs.mkdirs(this.configPath);
+    this.startWatch();
     if (await this.isStarted()) return null;
     this.isMaster = true;
-    const configPath = `${this.configPath}.json`;
-    await fs.mkdirs(this.options.configBasePath);
     return fs.writeFile(
       configPath,
       CircularJSON.stringify({ master: { pid: process.pid } })
     );
   }
 
+  startWatch() {
+    this.watcher = watch(
+      this.configPath,
+      { recursive: true },
+      this.handleUpdate.bind(this)
+    );
+  }
+
   startSync() {
+    if (this.currentProcStarted) return null;
+    this.currentProcStarted = true;
+    const configPath = `${this.configPath}.json`;
+    fs.mkdirsSync(this.configPath);
+    this.startWatch();
     if (this.isStartedSync()) return null;
     this.isMaster = true;
-    const configPath = `${this.configPath}.json`;
-    fs.mkdirsSync(this.options.configBasePath);
     return fs.writeFileSync(
       configPath,
       CircularJSON.stringify({ master: { pid: process.pid } })
     );
   }
 
-  finish() {
+  async finish() {
+    if (this.watcher) this.watcher.close();
+    await new Promise(r => setTimeout(r, this.options.stopTimeout));
     fs.removeSync(`${this.configPath}.json`);
     return fs.removeSync(this.configPath);
   }
