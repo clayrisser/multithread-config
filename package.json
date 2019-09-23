@@ -43,16 +43,21 @@
     "prepublish": "npm run build",
     "start": "sh example/start.sh",
     "start:client": "babel-node example/client",
-    "start:server": "babel-node example/server",
-    "test": "npm run lint && jest"
+    "start:master": "babel-node example/master",
+    "test": "npm run lint && jest --coverage"
   },
   "dependencies": {
     "bluebird": "^3.5.5",
     "circular-json": "^0.5.9",
     "core-js": "^3.2.1",
     "deasync": "^0.1.15",
+    "err": "^2.1.11",
+    "fs-extra": "^8.1.0",
+    "is-promise": "^2.1.0",
+    "lazy-get-decorator": "^2.2.0",
     "lodash": "^4.17.15",
     "node-ipc": "^9.1.1",
+    "node-watch": "^0.6.3",
     "pkg-dir": "^4.2.0"
   },
   "devDependencies": {

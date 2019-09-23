@@ -11,9 +11,7 @@ const pkg = require(path.resolve(rootPath, 'package.json'));
 const sockets = {};
 
 export default class Socket {
-  isOwner = false;
-
-  isStarted = false;
+  isMaster = false;
 
   states = [];
 
@@ -44,7 +42,7 @@ export default class Socket {
     });
   }
 
-  async isAlive() {
+  async isStarted() {
     return new Promise((resolve, reject) => {
       try {
         return this.connectToServer(() => {
@@ -68,7 +66,7 @@ export default class Socket {
 
   async setConfig(config = {}, name) {
     if (!name) ({ name } = this);
-    if (this.isOwner) {
+    if (this.isMaster) {
       if (!this.states[name]) this.states[name] = new State();
       this.states[name].config = config;
     }
@@ -90,7 +88,7 @@ export default class Socket {
 
   async getConfig(name) {
     if (!name) ({ name } = this);
-    if (this.isOwner) return this.states?.[name]?.config || {};
+    if (this.isMaster) return this.states?.[name]?.config || {};
     return new Promise((resolve, reject) => {
       try {
         return this.connectToServer(() => {
@@ -100,7 +98,7 @@ export default class Socket {
           });
           this.serverOn('stop.req', () => {
             try {
-              this.stop();
+              this.finish();
             } catch (err) {}
           });
           this.serverOn('getConfig.res', res => {
@@ -118,9 +116,8 @@ export default class Socket {
   }
 
   async start() {
-    if (this.isStarted) return null;
-    this.isStarted = true;
-    this.isOwner = true;
+    if (await this.isStarted()) return null;
+    this.isMaster = true;
     return new Promise((resolve, reject) => {
       try {
         this.ipc.serve(() => {
@@ -148,10 +145,10 @@ export default class Socket {
     return config;
   }
 
-  stop() {
+  finish() {
     const { id } = this.ipc.config;
     const { cascadeStop, stopTimeout } = this.options;
-    if (this.isOwner && cascadeStop) {
+    if (this.isMaster && cascadeStop) {
       _.each(sockets, socket => {
         this.ipc.server.emit(socket, 'stop.req', {});
       });
