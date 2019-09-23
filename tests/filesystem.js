@@ -31,6 +31,7 @@ describe('async new Filesystem().isStarted()', () => {
   it('filesystem is not started before starting', async () => {
     const filesystem = new Filesystem({ name: uuidv4() });
     expect(await filesystem.isStarted()).toBe(false);
+    filesystem.finish();
   });
   it('filesystem is started after starting', async () => {
     const filesystem = new Filesystem({ name: uuidv4() });
