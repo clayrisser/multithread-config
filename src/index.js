@@ -120,10 +120,16 @@ export default class MultithreadConfig {
     return config;
   }
 
-  finish() {
+  finishSync() {
     try {
-      if (this.socket) return this.socket.finish();
-      return this.filesystem.finish();
+      return this.transport.finishSync();
+    } catch (err) {}
+    return null;
+  }
+
+  async finish() {
+    try {
+      return this.transport.finish();
     } catch (err) {}
     return null;
   }

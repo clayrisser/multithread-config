@@ -1,6 +1,5 @@
 import CircularJSON from 'circular-json';
 import _ from 'lodash';
-import fs from 'fs-extra';
 import ipc from 'node-ipc';
 import path from 'path';
 import pkgDir from 'pkg-dir';
@@ -37,9 +36,8 @@ export default class Socket {
     process.on('uncaughtException', err => {
       if (/Cannot read property 'config' of undefined/.test(err.message)) {
         process.exit(1);
-      } else {
-        throw err;
       }
+      throw err;
     });
   }
 
@@ -93,9 +91,9 @@ export default class Socket {
             this.onUpdate(await this.getConfig(name));
             this.clientEmit('updateConfig.res', {});
           });
-          this.serverOn('stop.req', () => {
+          this.serverOn('stop.req', async () => {
             try {
-              this.finish();
+              await this.finish();
             } catch (err) {}
           });
           this.serverOn('getConfig.res', res => {
@@ -143,6 +141,10 @@ export default class Socket {
   }
 
   async finish() {
+    return new Promise(r => this.finishSync(r));
+  }
+
+  finishSync(cb = f => f) {
     const { id } = this.ipc.config;
     const { cascadeStop, stopTimeout } = this.options;
     if (this.isMaster && cascadeStop) {
@@ -155,15 +157,11 @@ export default class Socket {
     if (server) {
       if (server.server) ipc.server.server.close();
       server.stop();
-      await new Promise(r => setTimeout(r, stopTimeout));
-      if (this.ipc.server.path) {
-        try {
-          fs.removeSync(this.ipc.server.path);
-        } catch (err) {}
-      }
-      process.exit();
+      setTimeout(() => {
+        cb();
+        process.exit();
+      }, stopTimeout);
     }
-    return null;
   }
 
   connectToServer(callback) {

@@ -13,7 +13,6 @@ describe('async new MultithreadConfig().[set,get]Config(config)', () => {
     const mc = new MultithreadConfig({ name: uuidv4() });
     await mc.setConfig({ hello: 'world' });
     expect(await mc.getConfig()).toEqual({ hello: 'world' });
-    mc.finish();
   });
 });
 
@@ -23,7 +22,6 @@ describe('async new MultithreadConfig().[set,get]Config(config)', () => {
 //     mc.startSync();
 //     mc.setConfigSync({ hello: 'world' });
 //     expect(mc.getConfigSync()).toEqual({ hello: 'world' });
-//     mc.finish();
 //   });
 // });
 
@@ -32,7 +30,7 @@ describe('async new MultithreadConfig({ socket: false }).[set,get]Config(config)
     const mc = new MultithreadConfig({ name: uuidv4(), socket: false });
     await mc.setConfig({ hello: 'world' });
     expect(await mc.getConfig()).toEqual({ hello: 'world' });
-    mc.finish();
+    await mc.finish();
   });
 });
 
@@ -45,7 +43,7 @@ describe('new MultithreadConfig({ socket: false, sync: true }).[set,get]ConfigSy
     });
     mc.setConfigSync({ hello: 'world' });
     expect(mc.getConfigSync()).toEqual({ hello: 'world' });
-    mc.finish();
+    mc.finishSync();
   });
 });
 
@@ -56,7 +54,6 @@ describe('new MultithreadConfig().onUpdate = () => {}', () => {
     setTimeout(() => mc.setConfig({ howdy: 'texas' }), 100);
     await new Promise(r => (mc.onUpdate = r));
     expect(await mc.getConfig()).toEqual({ howdy: 'texas' });
-    mc.finish();
   });
 });
 
@@ -67,6 +64,6 @@ describe('new MultithreadConfig({ socket: false }).onUpdate = () => {}', () => {
     setTimeout(() => mc.setConfig({ howdy: 'texas' }), 100);
     await new Promise(r => (mc.onUpdate = r));
     expect(await mc.getConfig()).toEqual({ howdy: 'texas' });
-    mc.finish();
+    await mc.finish();
   });
 });

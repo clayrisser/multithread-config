@@ -5,6 +5,6 @@ import MultithreadConfig from '../src';
   await mc.start();
   mc.onUpdate = config => console.log('s updated', config);
   await mc.setConfig({ hello: 'world' });
-  console.log('s', await mc.getConfig());
+  console.log('m', await mc.getConfig());
   setTimeout(() => mc.setConfig({ howdy: 'texas' }), 5000);
 })();

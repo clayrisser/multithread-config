@@ -17,12 +17,12 @@ describe('async new Socket().isStarted()', () => {
     const socket = new Socket({ name: uuidv4() });
     await socket.start();
     expect(await socket.isStarted()).toBe(true);
-    socket.finish();
+    socket.finishSync();
   });
   it('socket is not started after finishing', async () => {
     const socket = new Socket({ name: uuidv4() });
     await socket.start();
-    socket.finish();
+    socket.finishSync();
     expect(await socket.isStarted()).toBe(false);
   });
 });
@@ -36,12 +36,12 @@ describe('async new Socket().isMaster', () => {
     const socket = new Socket({ name: uuidv4() });
     await socket.start();
     expect(socket.isMaster).toBe(true);
-    socket.finish();
+    socket.finishSync();
   });
   it('socket is master after finishing', async () => {
     const socket = new Socket({ name: uuidv4() });
     await socket.start();
-    socket.finish();
+    socket.finishSync();
     expect(socket.isMaster).toBe(true);
   });
 });
@@ -52,6 +52,6 @@ describe('async new Socket().setConfig()', () => {
     await socket.start();
     await socket.setConfig({ hello: 'world' });
     expect(await socket.getConfig()).toEqual({ hello: 'world' });
-    socket.finish();
+    socket.finishSync();
   });
 });

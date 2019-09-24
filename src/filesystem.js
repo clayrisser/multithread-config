@@ -5,6 +5,7 @@ import path from 'path';
 import pkgDir from 'pkg-dir';
 import watch from 'node-watch';
 import { LazyGetter } from 'lazy-get-decorator';
+import { sync } from 'cross-spawn';
 import State from './state';
 
 const rootPath = pkgDir.sync(process.cwd()) || process.cwd();
@@ -50,28 +51,10 @@ export default class Socket {
     return this.onUpdate(config);
   }
 
-  async detectIsMaster() {
-    const configPath = `${this.configPath}.json`;
-    if (!(await fs.exists(configPath))) throw new Err('master not started');
-    return (
-      JSON.parse((await fs.readFile(configPath)).toString())?.master?.pid ===
-      process.pid
-    );
-  }
-
-  detectIsMasterSync() {
-    const configPath = `${this.configPath}.json`;
-    if (!fs.existsSync(configPath)) throw new Err('master not started');
-    return (
-      JSON.parse(fs.readFileSync(configPath).toString())?.master?.pid ===
-      process.pid
-    );
-  }
-
   async setConfig(config = {}, name) {
     if (!name) ({ name } = this);
-    if (!this.isMaster && !(await this.detectIsMaster())) {
-      return new Err('must be master to set config');
+    if (!this.isMaster && (await this.isStarted())) {
+      throw new Err('must be master to set config');
     }
     if (!this.states[name]) this.states[name] = new State();
     this.states[name].config = config;
@@ -81,13 +64,15 @@ export default class Socket {
       configPath,
       CircularJSON.stringify({ config, master: { pid: process.pid } })
     );
-    return this.getConfig(name);
+    const updatedConfig = await this.getConfig(name);
+    this.onUpdate(updatedConfig);
+    return updatedConfig;
   }
 
   setConfigSync(config = {}, name) {
     if (!name) ({ name } = this);
-    if (!this.isMaster && !this.detectIsMasterSync()) {
-      return new Err('must be master to set config');
+    if (!this.isMaster && this.isStartedSync()) {
+      throw new Err('must be master to set config');
     }
     if (!this.states[name]) this.states[name] = new State();
     this.states[name].config = config;
@@ -100,7 +85,9 @@ export default class Socket {
         master: { pid: process.pid }
       })
     );
-    return this.getConfigSync(name);
+    const updatedConfig = this.getConfigSync(name);
+    this.onUpdate(updatedConfig);
+    return updatedConfig;
   }
 
   async getConfig(name) {
@@ -125,12 +112,28 @@ export default class Socket {
 
   isStartedSync() {
     const configPath = `${this.configPath}.json`;
-    return !!fs.existsSync(configPath);
+    if (
+      fs.existsSync(configPath) &&
+      this.processAlive(
+        JSON.parse(fs.readFileSync(configPath).toString())?.master?.pid
+      )
+    ) {
+      return true;
+    }
+    return false;
   }
 
   async isStarted() {
     const configPath = `${this.configPath}.json`;
-    return !!(await fs.exists(configPath));
+    if (
+      (await fs.exists(configPath)) &&
+      this.processAlive(
+        JSON.parse((await fs.readFile(configPath)).toString())?.master?.pid
+      )
+    ) {
+      return true;
+    }
+    return false;
   }
 
   async start() {
@@ -140,6 +143,7 @@ export default class Socket {
     await fs.mkdirs(this.configPath);
     this.startWatch();
     if (await this.isStarted()) return null;
+    await this.finish();
     this.isMaster = true;
     return fs.writeFile(
       configPath,
@@ -162,10 +166,20 @@ export default class Socket {
     fs.mkdirsSync(this.configPath);
     this.startWatch();
     if (this.isStartedSync()) return null;
+    fs.removeSync(`${this.configPath}.json`);
+    fs.removeSync(this.configPath);
     this.isMaster = true;
     return fs.writeFileSync(
       configPath,
       CircularJSON.stringify({ master: { pid: process.pid } })
+    );
+  }
+
+  processAlive(pid = null) {
+    return !/No process found/.test(
+      sync('find-process', [pid.toString()], {
+        stdio: 'pipe'
+      }).stdout?.toString()
     );
   }
 
@@ -174,5 +188,14 @@ export default class Socket {
     await new Promise(r => setTimeout(r, this.options.stopTimeout));
     fs.removeSync(`${this.configPath}.json`);
     return fs.removeSync(this.configPath);
+  }
+
+  finishSync(cb = f => f) {
+    if (this.watcher) this.watcher.close();
+    return setTimeout(() => {
+      fs.removeSync(`${this.configPath}.json`);
+      fs.removeSync(this.configPath);
+      cb();
+    }, this.options.stopTimeout);
   }
 }

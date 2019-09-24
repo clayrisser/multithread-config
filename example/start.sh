@@ -1,5 +1,5 @@
 #!/bin/bash
 
 npm run start:master &
-sleep 1
+sleep 3
 npm run start:client
