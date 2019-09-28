@@ -9,9 +9,9 @@ declare class MultithreadConfig<TConfig = Config> {
 
   finish(): Promise<void>;
 
-  preProcess<Config = TConfig>(): Config | Promise<Config>;
+  preProcess<Config = TConfig>(config: Config): Config | Promise<Config>;
 
-  postProcess<Config = TConfig>(): Config | Promise<Config>;
+  postProcess<Config = TConfig>(config: Config): Config | Promise<Config>;
 }
 
 declare interface Config {
