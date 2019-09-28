@@ -8,6 +8,10 @@ declare class MultithreadConfig {
   start(): Promise<void>;
 
   finish(): Promise<void>;
+
+  preProcess<TConfig = Config>(): TConfig | Promise<TConfig>;
+
+  postProcess<TConfig = Config>(): TConfig | Promise<TConfig>;
 }
 
 declare interface Config {

@@ -59,7 +59,8 @@ export default class MultithreadConfig {
     }
     if (!this.isStarted) this.startSync();
     config = this.preProcess(config);
-    return setConfigSync(config, name);
+    setConfigSync(config, name);
+    return this.getConfigSync(name);
   }
 
   getConfigSync(name) {
@@ -80,7 +81,8 @@ export default class MultithreadConfig {
     if (this.options.sync) throw new Err('asynchronous operations not enabled');
     if (!this.isStarted) await this.start();
     config = await this.preProcess(config);
-    return this.transport.setConfig(config, name);
+    await this.transport.setConfig(config, name);
+    return this.getConfig(name);
   }
 
   async getConfig(name) {
