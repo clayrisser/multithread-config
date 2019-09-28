@@ -1,5 +1,5 @@
 declare class MultithreadConfig<TConfig = Config> {
-  isOwner: boolean;
+  isMaster: () => boolean;
 
   setConfig<Config = TConfig>(config: Config): Promise<Config>;
 

@@ -101,6 +101,10 @@ export default class MultithreadConfig {
     return config;
   }
 
+  isMaster() {
+    return this.transport.isMaster;
+  }
+
   async start() {
     this.isStarted = true;
     if (this.options.sync) throw new Err('asynchronous operations not enabled');
