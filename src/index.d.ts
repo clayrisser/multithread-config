@@ -1,17 +1,17 @@
-declare class MultithreadConfig {
+declare class MultithreadConfig<TConfig = Config> {
   isOwner: boolean;
 
-  setConfig<TConfig = Config>(config: TConfig): Promise<TConfig>;
+  setConfig<Config = TConfig>(config: Config): Promise<Config>;
 
-  getConfig<TConfig = Config>(): Promise<TConfig>;
+  getConfig<Config = TConfig>(): Promise<Config>;
 
   start(): Promise<void>;
 
   finish(): Promise<void>;
 
-  preProcess<TConfig = Config>(): TConfig | Promise<TConfig>;
+  preProcess<Config = TConfig>(): Config | Promise<Config>;
 
-  postProcess<TConfig = Config>(): TConfig | Promise<TConfig>;
+  postProcess<Config = TConfig>(): Config | Promise<Config>;
 }
 
 declare interface Config {
