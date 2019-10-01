@@ -16,9 +16,9 @@ describe('async new MultithreadConfig().[set,get]Config(config)', () => {
   });
 });
 
-// describe('new MultithreadConfig({ sync: true }).[set,get]ConfigSync(config)', () => {
+// describe('new MultithreadConfig().[set,get]ConfigSync(config)', () => {
 //   it('sets and gets config', () => {
-//     const mc = new MultithreadConfig({ name: uuidv4(), sync: true });
+//     const mc = new MultithreadConfig({ name: uuidv4() });
 //     mc.startSync();
 //     mc.setConfigSync({ hello: 'world' });
 //     expect(mc.getConfigSync()).toEqual({ hello: 'world' });
@@ -32,15 +32,8 @@ describe('async new MultithreadConfig({ socket: false }).[set,get]Config(config)
     expect(await mc.getConfig()).toEqual({ hello: 'world' });
     await mc.finish();
   });
-});
-
-describe('new MultithreadConfig({ socket: false, sync: true }).[set,get]ConfigSync(config)', () => {
-  it('sets and gets config', () => {
-    const mc = new MultithreadConfig({
-      name: uuidv4(),
-      socket: false,
-      sync: true
-    });
+  it('sets and gets config sync', () => {
+    const mc = new MultithreadConfig({ name: uuidv4(), socket: false });
     mc.setConfigSync({ hello: 'world' });
     expect(mc.getConfigSync()).toEqual({ hello: 'world' });
     mc.finishSync();

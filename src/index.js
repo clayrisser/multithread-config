@@ -44,7 +44,7 @@ export default class MultithreadConfig {
   }
 
   setConfigSync(config = {}, name) {
-    if (!this.options.socket) {
+    if (this.options.socket) {
       throw new Err('synchronous operations not enabled');
     }
     let setConfigSync = (config, name) => {
@@ -65,7 +65,7 @@ export default class MultithreadConfig {
   }
 
   getConfigSync(name) {
-    if (!this.options.socket) {
+    if (this.options.socket) {
       throw new Err('synchronous operations not enabled');
     }
     let getConfigSync = name => this.filesystem.getConfigSync(name);
@@ -108,14 +108,15 @@ export default class MultithreadConfig {
 
   async start() {
     this.isStarted = true;
-    if (this.options.sync) throw new Err('asynchronous operations not enabled');
-    if (this.socket) return this.socket.start();
+    if (this.options.socket) return this.socket.start();
     return this.filesystem.start();
   }
 
   startSync() {
     this.isStarted = true;
-    if (!this.options.sync) throw new Err('synchronous operations not enabled');
+    if (this.options.socket) {
+      throw new Err('synchronous operations not enabled');
+    }
     if (this.socket) {
       const start = deasync(async () => this.socket.start());
       return start();
