@@ -27,7 +27,11 @@ declare module 'multithread-config' {
 
     start(): Promise<void>;
 
+    startSync(): void;
+
     finish(): Promise<void>;
+
+    finishSync(): void;
 
     preProcess<Config = TConfig>(config: Config): Config | Promise<Config>;
 
