@@ -14,7 +14,6 @@ export default class MultithreadConfig {
   constructor(options) {
     this.options = {
       socket: true,
-      sync: false,
       timeout: 100,
       name:
         require(path.resolve(rootPath, 'package.json')).name || 'some-config',
@@ -45,7 +44,9 @@ export default class MultithreadConfig {
   }
 
   setConfigSync(config = {}, name) {
-    if (!this.options.sync) throw new Err('synchronous operations not enabled');
+    if (!this.options.socket) {
+      throw new Err('synchronous operations not enabled');
+    }
     let setConfigSync = (config, name) => {
       return this.filesystem.setConfigSync(config, name);
     };
@@ -64,7 +65,9 @@ export default class MultithreadConfig {
   }
 
   getConfigSync(name) {
-    if (!this.options.sync) throw new Err('synchronous operations not enabled');
+    if (!this.options.socket) {
+      throw new Err('synchronous operations not enabled');
+    }
     let getConfigSync = name => this.filesystem.getConfigSync(name);
     if (this.socket) {
       getConfigSync = deasync(async name => this.socket.getConfig(name));
@@ -78,7 +81,6 @@ export default class MultithreadConfig {
   }
 
   async setConfig(config = {}, name) {
-    if (this.options.sync) throw new Err('asynchronous operations not enabled');
     if (!this.isStarted) await this.start();
     config = await this.preProcess(config);
     await this.transport.setConfig(config, name);
@@ -86,7 +88,6 @@ export default class MultithreadConfig {
   }
 
   async getConfig(name) {
-    if (this.options.sync) throw new Err('asynchronous operations not enabled');
     if (!this.isStarted) await this.start();
     let config = null;
     config = await this.transport.getConfig(name);

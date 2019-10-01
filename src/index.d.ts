@@ -6,7 +6,6 @@ declare module 'multithread-config' {
 
     export interface Options {
       socket?: boolean;
-      sync?: boolean;
       timeout?: number;
       name?: string;
     }
