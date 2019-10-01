@@ -19,7 +19,11 @@ declare module 'multithread-config' {
 
     setConfig<Config = TConfig>(config: Config): Promise<Config>;
 
+    setConfigSync<Config = TConfig>(config: Config): Config;
+
     getConfig<Config = TConfig>(): Promise<Config>;
+
+    getConfigSync<Config = TConfig>(): Config;
 
     start(): Promise<void>;
 
