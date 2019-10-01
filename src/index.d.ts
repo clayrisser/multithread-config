@@ -16,6 +16,8 @@ declare module 'multithread-config' {
 
     isMaster: () => boolean;
 
+    isStarted: boolean;
+
     setConfig<Config = TConfig>(config: Config): Promise<Config>;
 
     setConfigSync<Config = TConfig>(config: Config): Config;
