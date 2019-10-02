@@ -8,9 +8,9 @@ describe('new MultithreadConfig()', () => {
   });
 });
 
-describe('async new MultithreadConfig().[set,get]Config(config)', () => {
+describe('async new MultithreadConfig({ forceKill: true }).[set,get]Config(config)', () => {
   it('sets and gets config', async () => {
-    const mc = new MultithreadConfig({ name: uuidv4() });
+    const mc = new MultithreadConfig({ name: uuidv4(), forceKill: true });
     await mc.setConfig({ hello: 'world' });
     expect(await mc.getConfig()).toEqual({ hello: 'world' });
   });
@@ -40,9 +40,9 @@ describe('async new MultithreadConfig({ socket: false }).[set,get]Config(config)
   });
 });
 
-describe('new MultithreadConfig().onUpdate = () => {}', () => {
+describe('new MultithreadConfig({ forceKill: true }).onUpdate = () => {}', () => {
   it('updates config', async () => {
-    const mc = new MultithreadConfig({ name: uuidv4() });
+    const mc = new MultithreadConfig({ name: uuidv4(), forceKill: true });
     await mc.setConfig({ hello: 'world' });
     setTimeout(() => mc.setConfig({ howdy: 'texas' }), 100);
     await new Promise(r => (mc.onUpdate = r));
