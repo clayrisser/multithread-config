@@ -159,7 +159,9 @@ export default class Socket {
       server.stop();
       setTimeout(() => {
         cb();
-        process.exit();
+        if (this.options.forceKill) {
+          process.exit();
+        }
       }, stopTimeout);
     }
   }

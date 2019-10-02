@@ -5,9 +5,11 @@ declare module 'multithread-config' {
     }
 
     export interface Options {
+      forceKill?: boolean;
+      name?: string;
       socket?: boolean;
       timeout?: number;
-      name?: string;
+      watch?: boolean;
     }
   }
 

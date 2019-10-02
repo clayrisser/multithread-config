@@ -152,6 +152,7 @@ export default class Socket {
   }
 
   startWatch() {
+    if (!this.options.watch) return;
     this.watcher = watch(
       this.configPath,
       { recursive: true },
@@ -187,7 +188,10 @@ export default class Socket {
     if (this.watcher) this.watcher.close();
     await new Promise(r => setTimeout(r, this.options.stopTimeout));
     fs.removeSync(`${this.configPath}.json`);
-    return fs.removeSync(this.configPath);
+    fs.removeSync(this.configPath);
+    if (this.options.forceKill) {
+      process.exit();
+    }
   }
 
   finishSync(cb = f => f) {
@@ -196,6 +200,9 @@ export default class Socket {
       fs.removeSync(`${this.configPath}.json`);
       fs.removeSync(this.configPath);
       cb();
+      if (this.options.forceKill) {
+        process.exit();
+      }
     }, this.options.stopTimeout);
   }
 }

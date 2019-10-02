@@ -15,6 +15,8 @@ export default class MultithreadConfig {
     this.options = {
       socket: true,
       timeout: 100,
+      watch: true,
+      forceKill: true,
       name:
         require(path.resolve(rootPath, 'package.json')).name || 'some-config',
       ...options
