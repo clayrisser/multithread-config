@@ -1,6 +1,6 @@
 {
   "name": "multithread-config",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "set and load config from multiple threads",
   "keywords": [
     "config",
@@ -47,14 +47,14 @@
     "test": "npm run lint && jest --coverage --forceExit"
   },
   "dependencies": {
-    "bluebird": "^3.5.5",
+    "bluebird": "^3.7.2",
     "circular-json": "^0.5.9",
-    "core-js": "^3.2.1",
-    "cross-spawn": "^7.0.0",
-    "deasync": "^0.1.15",
+    "core-js": "^3.6.4",
+    "cross-spawn": "^7.0.1",
+    "deasync": "^0.1.19",
     "err": "^2.1.11",
-    "find-process": "^1.4.2",
-    "fs-extra": "^8.1.0",
+    "find-process": "^1.4.3",
+    "fs-extra": "^9.0.0",
     "is-promise": "^2.1.0",
     "lazy-get-decorator": "^2.2.0",
     "lodash": "^4.17.15",
@@ -63,16 +63,19 @@
     "pkg-dir": "^4.2.0"
   },
   "devDependencies": {
-    "@babel/cli": "^7.6.0",
-    "@babel/core": "^7.6.0",
-    "@babel/node": "^7.6.1",
-    "babel-eslint": "^10.0.3",
-    "babel-preset-jam": "^0.4.3",
-    "eslint": "^6.4.0",
+    "@babel/cli": "^7.8.4",
+    "@babel/core": "^7.9.0",
+    "@babel/node": "^7.8.7",
+    "@babel/plugin-proposal-class-properties": "^7.8.3",
+    "@babel/plugin-proposal-decorators": "^7.8.3",
+    "@babel/plugin-proposal-optional-chaining": "^7.9.0",
+    "@babel/preset-env": "^7.9.0",
+    "babel-eslint": "^10.1.0",
+    "eslint": "^6.8.0",
     "eslint-config-jam": "^0.2.20",
-    "eslint-plugin-jest": "^22.17.0",
-    "jest": "^24.9.0",
-    "uuid": "^3.3.3"
+    "eslint-plugin-jest": "^23.8.2",
+    "jest": "^25.1.0",
+    "uuid": "^7.0.2"
   },
   "engines": {
     "node": ">=6.0.0"

@@ -1,20 +1,18 @@
 declare module 'multithread-config' {
-  namespace MultithreadConfig {
-    export interface Config {
-      [key: string]: any;
-    }
-
-    export interface Options {
-      forceKill?: boolean;
-      name?: string;
-      socket?: boolean;
-      timeout?: number;
-      watch?: boolean;
-    }
+  interface Config {
+    [key: string]: any;
   }
 
-  class MultithreadConfig<TConfig = MultithreadConfig.Config> {
-    constructor(options?: MultithreadConfig.Options);
+  interface Options {
+    forceKill?: boolean;
+    name?: string;
+    socket?: boolean;
+    timeout?: number;
+    watch?: boolean;
+  }
+
+  class MultithreadConfig<TConfig = Config> {
+    constructor(options?: Options);
 
     isMaster: () => boolean;
 
