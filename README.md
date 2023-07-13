@@ -4,6 +4,8 @@
 
 > set and read config from multiple threads
 
+![](assets/multithread-config.png)
+
 Please ★ this repo if you found it useful ★ ★ ★
 
 ## Features
