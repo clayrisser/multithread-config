@@ -58,7 +58,7 @@
     "is-promise": "^2.1.0",
     "lazy-get-decorator": "^2.2.0",
     "lodash": "^4.17.15",
-    "node-ipc": "^9.1.1",
+    "node-ipc": "^11.1.0",
     "node-watch": "^0.6.3",
     "pkg-dir": "^4.2.0"
   },
