@@ -47,6 +47,7 @@
     "test": "npm run lint && jest --coverage --forceExit"
   },
   "dependencies": {
+    "@achrinza/node-ipc": "^9.2.8",
     "bluebird": "^3.7.2",
     "circular-json": "^0.5.9",
     "core-js": "^3.6.4",
@@ -58,7 +59,7 @@
     "is-promise": "^2.1.0",
     "lazy-get-decorator": "^2.2.0",
     "lodash": "^4.17.15",
-    "node-ipc": "^11.1.0",
+    "multithread-config": "^0.7.4",
     "node-watch": "^0.6.3",
     "pkg-dir": "^4.2.0"
   },

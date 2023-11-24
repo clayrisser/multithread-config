@@ -1,6 +1,6 @@
 import CircularJSON from 'circular-json';
 import _ from 'lodash';
-import ipc from 'node-ipc';
+import ipc from '@achrinza/node-ipc';
 import path from 'path';
 import pkgDir from 'pkg-dir';
 import { mapSeries } from 'bluebird';
@@ -23,7 +23,7 @@ export default class Socket {
       stopTimeout: 1000,
       timeout: 100,
       name: pkg.name,
-      ...options
+      ...options,
     };
     this.ipc = ipc;
     this.ipc.config = {
@@ -31,9 +31,9 @@ export default class Socket {
       retry: 1000,
       silent: true,
       id: this.options.name,
-      ...(options.socket === true ? {} : options.socket)
+      ...(options.socket === true ? {} : options.socket),
     };
-    process.on('uncaughtException', err => {
+    process.on('uncaughtException', (err) => {
       if (/Cannot read property 'config' of undefined/.test(err.message)) {
         process.exit(1);
       }
@@ -65,7 +65,7 @@ export default class Socket {
       if (!this.states[name]) this.states[name] = new State();
       this.states[name].config = config;
     }
-    await mapSeries(Object.values(sockets), async socket => {
+    await mapSeries(Object.values(sockets), async (socket) => {
       const result = new Promise((resolve, reject) => {
         try {
           return this.clientOn('updateConfig.res', resolve);
@@ -96,12 +96,12 @@ export default class Socket {
               await this.finish();
             } catch (err) {}
           });
-          this.serverOn('getConfig.res', res => {
+          this.serverOn('getConfig.res', (res) => {
             return resolve(res?.config || null);
           });
           this.clientEmit('getConfig.req', {
             name,
-            pid: process.pid
+            pid: process.pid,
           });
         });
       } catch (err) {
@@ -141,14 +141,14 @@ export default class Socket {
   }
 
   async finish() {
-    return new Promise(r => this.finishSync(r));
+    return new Promise((r) => this.finishSync(r));
   }
 
-  finishSync(cb = f => f) {
+  finishSync(cb = (f) => f) {
     const { id } = this.ipc.config;
     const { cascadeStop, stopTimeout } = this.options;
     if (this.isMaster && cascadeStop) {
-      _.each(sockets, socket => {
+      _.each(sockets, (socket) => {
         this.ipc.server.emit(socket, 'stop.req', {});
       });
     }
